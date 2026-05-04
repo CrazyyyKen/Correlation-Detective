@@ -73,6 +73,7 @@ public class RecursiveBoundingTask extends RecursiveAction {
 //    TODO FIX WHAT HAPPENS FOR DISTANCES, WHERE YOU WANT EVERYTHING LOWER THAN A THRESHOLD
     private static void assessCC(ClusterCombination canCC) throws ProgressiveStopException {
         int p = canCC.getLHS().size() + canCC.getRHS().size();
+        boolean singleton = canCC.isSingleton();
 
         //        Compute/get bounds
         par.simMetric.bound(canCC, par.empiricalBounding,
@@ -103,6 +104,9 @@ public class RecursiveBoundingTask extends RecursiveAction {
             canCC.setDecisive(false);
         } else { // canCC is decisive, add to DCCs
             canCC.setDecisive(true);
+            if (singleton){
+                par.statBag.registerPostPruningComparison(canCC.getSingletonCandidateKey());
+            }
 
 //            Negative DCC, postpone for later if actual UB is above threshold (actually indecisive)
             if (shrunkUB < threshold) {
@@ -114,7 +118,11 @@ public class RecursiveBoundingTask extends RecursiveAction {
                 }
             } else if (canCC.getLB() > threshold){ //  Positive DCC
                 canCC.setPositive(true);
-                resultSet.addAll(canCC.unpackAndCheckConstraints(par), par.runningThreshold);
+                if (singleton){
+                    resultSet.add(canCC, par.runningThreshold);
+                } else {
+                    resultSet.addAll(canCC.unpackAndCheckConstraints(par), par.runningThreshold);
+                }
             }
         }
     }

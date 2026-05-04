@@ -66,12 +66,14 @@ public class SimilarityDetective extends Algorithm {
         par.LOGGER.fine(String.format("%-30s %d","nCCs:", par.statBag.getNCCs().get()));
         par.LOGGER.fine(String.format("%-30s %d","nSeqCCs:", par.statBag.getNSecCCs().get()));
         par.LOGGER.fine(String.format("%-30s %d","nParallelCCs:", par.statBag.getNParallelCCs().get()));
-        par.LOGGER.fine(String.format("%-30s %.1f","avgCCSize:",
-                (double) par.statBag.getTotalCCSize().get() / (double) par.statBag.getNCCs().get()));
+        double avgCCSize = par.statBag.getNCCs().get() == 0 ? 0d :
+                (double) par.statBag.getTotalCCSize().get() / (double) par.statBag.getNCCs().get();
+        par.LOGGER.fine(String.format("%-30s %.1f","avgCCSize:", avgCCSize));
 
 //        DCCs
         par.LOGGER.fine(String.format("%-30s %d","nPosDCCs:", par.statBag.getNPosDCCs().get()));
         par.LOGGER.fine(String.format("%-30s %d","nNegDCCs:", par.statBag.getNNegDCCs().get()));
+        par.LOGGER.info(String.format("%-30s %d", "Post-pruning comparisons:", par.statBag.getNPostPruningComparisons().get()));
 
         this.printStageDurations(statBag);
     }

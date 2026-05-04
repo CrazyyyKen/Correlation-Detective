@@ -14,6 +14,7 @@ import lombok.Setter;
 import similarities.MultivariateSimilarityFunction;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -391,13 +392,16 @@ public class ClusterCombination implements ResultObject {
         double[] Wl = par.Wl[this.getLHS().size() - 1];
         double[] Wr = par.maxPRight > 0 ? par.Wr[this.getRHS().size() - 1]: null;
 
-        out = new FastLinkedList<>(this.getSingletons(Wl, Wr, par.allowSideOverlap).stream()
+        FastLinkedList<ClusterCombination> singletonCCs = this.getSingletons(Wl, Wr, par.allowSideOverlap);
+
+        out = new FastLinkedList<>(singletonCCs.stream()
                 .filter(cc -> {
                     par.simMetric.bound(cc, par.empiricalBounding, Wl, Wr, par.pairwiseDistances, this.boundingTimestamp);
                     if (Math.abs(cc.getLB() - cc.getUB()) > 0.001) {
                         par.LOGGER.info("postprocessing: found a singleton CC with LB != UB");
                         return false;
                     }
+                    par.statBag.registerPostPruningComparison(cc.getSingletonCandidateKey());
 
                     double threshold = par.runningThreshold.get();
 
@@ -434,5 +438,23 @@ public class ClusterCombination implements ResultObject {
             throw new IllegalArgumentException("Cluster combination is not a singleton");
         }
 
+    }
+
+    public String getSingletonCandidateKey(){
+        if (!this.isSingleton()){
+            throw new IllegalStateException("Candidate key is only defined for singleton cluster combinations");
+        }
+
+        String left = LHS.stream()
+                .map(c -> c.pointsIdx.get(0))
+                .sorted(Comparator.naturalOrder())
+                .map(String::valueOf)
+                .collect(Collectors.joining("-"));
+        String right = RHS.stream()
+                .map(c -> c.pointsIdx.get(0))
+                .sorted(Comparator.naturalOrder())
+                .map(String::valueOf)
+                .collect(Collectors.joining("-"));
+        return left + "|" + right;
     }
 }

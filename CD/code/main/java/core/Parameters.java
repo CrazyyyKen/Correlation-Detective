@@ -92,7 +92,7 @@ public class Parameters {
     }
 
     public void setDependentVariables(){
-        experiment = experimentId != "";
+        experiment = experimentId != null && !experimentId.isEmpty();
         maxApproximationSize = simMetric.getMaxApproximationSize(maxApproximationSizeRatio);
         statBag = new StatBag(experiment);
         simMetric.setStatBag(statBag);
@@ -264,4 +264,3 @@ public class Parameters {
         return new double[][][]{Wl, Wr};
     }
 }
-

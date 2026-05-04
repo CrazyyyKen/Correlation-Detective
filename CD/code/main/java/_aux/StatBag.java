@@ -11,9 +11,10 @@ import org.apache.commons.lang3.time.StopWatch;
 import java.io.File;
 import java.io.FileWriter;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -35,20 +36,28 @@ public class StatBag {
     @Getter private AtomicLong totalCCSize = new AtomicLong(0);
     @Getter private AtomicLong nPosDCCs = new AtomicLong(0);
     @Getter private AtomicLong nNegDCCs = new AtomicLong(0);
+    @Getter private AtomicLong nPostPruningComparisons = new AtomicLong(0);
 
 //    Time stats
     @Getter private AtomicLong nSecCCs = new AtomicLong(0);
     @Getter private AtomicLong nParallelCCs = new AtomicLong(0);
     @Getter private AtomicLong DFSTime = new AtomicLong(0);
+    private final Set<String> uniqueComparedCandidates = ConcurrentHashMap.newKeySet();
 
-//    Only computed if experiment is true
+//    Stats should be tracked during normal runs and experiments alike.
     public void incrementStat(AtomicLong stat){
-        if (!experiment) stat.incrementAndGet();
+        stat.incrementAndGet();
     }
 
-//    Only computed if experiment is true
+//    Stats should be tracked during normal runs and experiments alike.
     public void addStat(AtomicLong stat, Supplier<Integer> value){
-        if (!experiment) stat.addAndGet(value.get());
+        stat.addAndGet(value.get());
+    }
+
+    public void registerPostPruningComparison(String candidateKey){
+        if (uniqueComparedCandidates.add(candidateKey)){
+            nPostPruningComparisons.incrementAndGet();
+        }
     }
 
     public void saveStats(Parameters parameters){
@@ -85,7 +94,7 @@ public class StatBag {
 
 
 //            Create k-v store for all fields
-            ConcurrentHashMap<String, Object> fieldMap = new ConcurrentHashMap<>();
+            LinkedHashMap<String, Object> fieldMap = new LinkedHashMap<>();
             paramFields.forEach(field -> {
                 try {
                     fieldMap.put(field.getName(), field.get(parameters));
